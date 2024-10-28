@@ -11,7 +11,7 @@ struct AddRecipe: View {
     @ObservedObject var recipeViewModel: RecipeViewModel
     @Environment(\.presentationMode) var presentationMode
     
-    @State private var showIngredientSheet : Bool = false
+    @State private var showIngredientSheet = false
     @State private var ingredientName: String = ""
     @State private var selectedMeasurement: String = "Spoon"
     @State private var serving: Int = 1
