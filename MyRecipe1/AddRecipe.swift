@@ -26,10 +26,10 @@ struct AddRecipe: View {
                     .background(Color(.systemGray6))
                     .frame(maxWidth: .infinity, maxHeight: 250)
                 VStack {
-                    Image(systemName: "Upload Photo")
+                    Image(systemName: "photo.badge.plus")
                         .resizable()
                           .scaledToFit()
-                          .frame(width: 150, height: 150)
+                          .frame(width: 100, height: 150)
                     .foregroundColor(Color("RecipeOrangi"))
                     Text("Upload Photo")
                         .font(.system(size: 20, weight: .bold))
