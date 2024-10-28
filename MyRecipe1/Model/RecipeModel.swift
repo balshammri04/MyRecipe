@@ -1,8 +1,8 @@
 //
 //  RecipeModel.swift
-//  Recipe1
+//  MyRecipe1
 //
-//  Created by basant amin bakir on 25/10/2024.
+//   Created by bayan alshammri on  28/10/2024.
 //
 import Foundation
 import PhotosUI

@@ -1,8 +1,8 @@
 //
 //  ContentView.swift
-//  Recipe1
+//  MyRecipe1
 //
-//  Created by basant amin bakir on 25/10/2024.
+//   Created by bayan alshammri on  28/10/2024.
 //
 
 import SwiftUI
@@ -52,7 +52,7 @@ struct RecipeView: View {
                 List {
                     ForEach(recipeViewModel.recipes) { recipe in
                         ZStack(alignment: .bottomLeading) {
-                            Image("salad_image")
+                            Image("salad")
                                 .resizable()
                                 .scaledToFill()
                                 .frame(maxWidth: .infinity, minHeight: 150)

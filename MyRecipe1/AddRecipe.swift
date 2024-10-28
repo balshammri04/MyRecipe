@@ -1,8 +1,8 @@
 //
 //  AddRecipe.swift
-//  Recipe1
+//  MyRecipe1
 //
-//  Created by basant amin bakir on 25/10/2024.
+//   Created by bayan alshammri on  28/10/2024.
 //
 
 import SwiftUI
@@ -26,11 +26,11 @@ struct AddRecipe: View {
                     .background(Color(.systemGray6))
                     .frame(maxWidth: .infinity, maxHeight: 250)
                 VStack {
-                    Image(systemName: "photo.badge.plus")
+                    Image(systemName: "Upload Photo")
                         .resizable()
-                        .scaledToFit()
-                        .frame(width: 150, height: 150)
-                        .foregroundColor(Color("RecipeOrangi"))
+                          .scaledToFit()
+                          .frame(width: 150, height: 150)
+                    .foregroundColor(Color("RecipeOrangi"))
                     Text("Upload Photo")
                         .font(.system(size: 20, weight: .bold))
                         .padding(.bottom, 10)
@@ -53,7 +53,10 @@ struct AddRecipe: View {
             // Description field
             VStack(alignment: .leading, spacing: 8) {
                 Text("Description").font(.system(size: 18, weight: .bold))
-                TextEditor(text: $recipeViewModel.recipeDescription)
+                TextField("Description", text: $recipeViewModel.recipeName)
+                    .padding()
+                    .background(Color(.systemGray6))
+               // TextEditor(text: $recipeViewModel.recipeDescription)
                     .scrollContentBackground(.hidden)
                     .frame(height: 100)
                     .padding()
