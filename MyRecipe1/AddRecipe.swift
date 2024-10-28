@@ -11,7 +11,7 @@ struct AddRecipe: View {
     @ObservedObject var recipeViewModel: RecipeViewModel
     @Environment(\.presentationMode) var presentationMode
     
-    @State private var showIngredientPop: Bool = false
+    @State private var showIngredientSheet : Bool = false
     @State private var ingredientName: String = ""
     @State private var selectedMeasurement: String = "Spoon"
     @State private var serving: Int = 1
@@ -40,63 +40,69 @@ struct AddRecipe: View {
             
             // Title field
             VStack(alignment: .leading, spacing: 8) {
-                Text("Title").font(.system(size: 18, weight: .bold))
-                TextField("Title", text: $recipeViewModel.recipeName)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1))
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 20)
-            
-            // Description field
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Description").font(.system(size: 18, weight: .bold))
-                TextField("Description", text: $recipeViewModel.recipeName)
-                    .padding()
-                    .background(Color(.systemGray6))
-               // TextEditor(text: $recipeViewModel.recipeDescription)
-                    .scrollContentBackground(.hidden)
-                    .frame(height: 100)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1))
-            }
-            .padding(.horizontal)
+                           Text("Title").font(.system(size: 18, weight: .bold))
+                           TextField("Title", text: $recipeViewModel.recipeName)
+                               .padding()
+                               .background(Color(.systemGray6))
+                               .cornerRadius(8)
+                               .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1))
+                       }
+                       .padding(.horizontal)
+                       .padding(.bottom, 20)
+                       
+                       // Description field
+                       VStack(alignment: .leading, spacing: 8) {
+                           Text("Description").font(.system(size: 18, weight: .bold))
+                           TextEditor(text: $recipeViewModel.recipeDescription)
+                               .scrollContentBackground(.hidden)
+                               .frame(height: 100)
+                               .padding()
+                               .background(Color(.systemGray6))
+                               .cornerRadius(8)
+                               .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1))
+                       }
+           .padding(.horizontal)
             .padding(.bottom, 20)
             
             // Add Ingredient section
             HStack {
                 Text("Add Ingredient").font(.system(size: 18, weight: .bold))
                 Spacer()
-                Button(action: { showIngredientPop.toggle() }) {
+                Button(action: { showIngredientSheet.toggle() }) {
                     Image(systemName: "plus")
                         .foregroundColor(Color("RecipeOrangi"))
                         .font(.system(size: 24))
+                    
                 }
             }
-            .padding(.horizontal)
+           .padding(.horizontal)
             
             
             ForEach(recipeViewModel.ingredients) { ingredient in
                 HStack {
                     Text("\(ingredient.serving)")
                         .font(.system(size: 18, weight: .bold))
+                        .padding(.horizontal, 30)
+                       .padding(.vertical, 8)
                     Text(ingredient.name)
                         .font(.system(size: 18, weight: .bold))
-                    Spacer()
+    
+                   Spacer()
                     Text(ingredient.measurement)
                         .padding(.horizontal, 30)
-                        .padding(.vertical, 10)
+                       .padding(.vertical, 8)
                         .background(Color.orange)
                         .cornerRadius(8)
+
                 }
-                .background(Color.gray.opacity(0.1))
-                .padding(.horizontal)
-                .padding(.top, 20)
-            }
+              .padding(.bottom, 10)
+               .padding(.top, 10)
+              .background(Color.gray.opacity(0.1))
+              .padding(.horizontal,10)
+              .cornerRadius(30)
+              
+              
+          }
         }
         .navigationTitle("New Recipe")
         .toolbar {
@@ -128,34 +134,36 @@ struct AddRecipe: View {
         .toolbarBackgroundVisibility(.visible)
         .overlay(
             Group {
-                if showIngredientPop {
+                if showIngredientSheet {
                     // Ingredient pop-up overlay
                     Color.black.opacity(0.3).edgesIgnoringSafeArea(.all)
-                        .onTapGesture { showIngredientPop.toggle() }
+              .onTapGesture { showIngredientSheet.toggle() }
                     VStack(spacing: 20) {
                         Text("Ingredient Name").font(.headline)
                         TextField("Ingredient Name", text: $ingredientName)
                             .padding()
                             .background(Color(.systemGray6))
                             .cornerRadius(8)
+                    
+
                         HStack {
                             Text("Measurement").font(.headline)
                             Spacer()
                         }
                         // Measurement buttons
                         HStack {
-                            Button(action: { selectedMeasurement = "Spoon" }) {
+                            Button(action: { selectedMeasurement = "🥄 Spoon" }) {
                                 Text("🥄 Spoon")
                                     .foregroundColor(Color.black)
                                     .padding()
-                                    .background(selectedMeasurement == "Spoon" ? Color.orange : Color.gray.opacity(0.3))
+                                    .background(selectedMeasurement == "🥄 Spoon" ? Color.orange : Color.gray.opacity(0.3))
                                     .cornerRadius(8)
                             }
-                            Button(action: { selectedMeasurement = "Cup" }) {
+                            Button(action: { selectedMeasurement = "🍵 Cup" }) {
                                 Text("🍵 Cup")
                                     .foregroundColor(Color.black)
                                     .padding()
-                                    .background(selectedMeasurement == "Cup" ? Color.orange : Color.gray.opacity(0.3))
+                                    .background(selectedMeasurement == "🍵 Cup" ? Color.orange : Color.gray.opacity(0.3))
                                     .cornerRadius(8)
                             }
                         }
@@ -168,6 +176,7 @@ struct AddRecipe: View {
                             Button(action: { if serving > 1 { serving -= 1 } }) {
                                 Image(systemName: "minus")
                                     .foregroundColor(Color.black)
+                                
                             }
                             Text("\(serving)").padding(.horizontal)
                             Button(action: { serving += 1 }) {
@@ -175,11 +184,15 @@ struct AddRecipe: View {
                                     .foregroundColor(Color.black)
                             }
                             Text(selectedMeasurement).padding(.horizontal).background(Color.orange).cornerRadius(8)
+                           
                         }
                         // Cancel and Add buttons
                         HStack {
-                            Button(action: { showIngredientPop = false }) {
-                                Text("Cancel").foregroundColor(.red).padding().frame(maxWidth: .infinity).background(Color(.systemGray6)).cornerRadius(8)
+              Button(action: { showIngredientSheet = false }) {
+                                Text("Cancel").foregroundColor(.red).padding()
+                      .frame(maxWidth: .infinity)
+                      .background(Color(.systemGray6))
+                                    .cornerRadius(8)
                             }
                             Button(action: {
                               
@@ -189,7 +202,7 @@ struct AddRecipe: View {
                                 selectedMeasurement = "Spoon"
                                 serving = 1
 
-                                showIngredientPop = false
+                    showIngredientSheet = false
                             }) {
                                 Text("Add")
                                     .foregroundColor(.white)
@@ -200,14 +213,15 @@ struct AddRecipe: View {
                             }
 
                         }
+
                     }
                     .padding()
-                    .background(Color.white)
-                    .cornerRadius(20)
-                    .shadow(radius: 20)
+                   .background(Color.white)
+                   .cornerRadius(20)
+                   .shadow(radius: 20)
                     .frame(maxWidth: 300)
-                    .padding()
                 }
+
             }
         )
     }
