@@ -1,20 +1,41 @@
-//
-//  AddRecipe.swift
-//  MyRecipe1
-//
-//   Created by bayan alshammri on  28/10/2024.
-//
-
 import SwiftUI
+import PhotosUI
+
+struct ImagePicker: View {
+    @Binding var image: UIImage?
+    @Environment(\.dismiss) var dismiss
+    @State private var selectedItem: PhotosPickerItem? = nil
+
+    var body: some View {
+        PhotosPicker(selection: $selectedItem) {
+            Text("Select a photo")
+        }
+        .onChange(of: selectedItem) {
+            Task {
+                if let newItem = selectedItem {
+                    if let data = try? await newItem.loadTransferable(type: Data.self) {
+                        if let uiImage = UIImage(data: data) {
+                            image = uiImage
+                        }
+                    }
+                }
+                dismiss()
+            }
+        }
+
+    }
+}
 
 struct AddRecipe: View {
     @ObservedObject var recipeViewModel: RecipeViewModel
     @Environment(\.presentationMode) var presentationMode
-    
+
     @State private var showIngredientSheet = false
     @State private var ingredientName: String = ""
     @State private var selectedMeasurement: String = "Spoon"
     @State private var serving: Int = 1
+    @State private var showImagePicker = false
+    @State private var recipeImage: UIImage?
 
     var body: some View {
         VStack {
@@ -25,43 +46,57 @@ struct AddRecipe: View {
                     .foregroundColor(.red)
                     .background(Color(.systemGray6))
                     .frame(maxWidth: .infinity, maxHeight: 250)
+                    .onTapGesture {
+                        showImagePicker.toggle()
+                    }
+                
                 VStack {
-                    Image(systemName: "photo.badge.plus")
-                        .resizable()
-                          .scaledToFit()
-                          .frame(width: 100, height: 150)
-                    .foregroundColor(Color("RecipeOrangi"))
+                    if let recipeImage = recipeImage {
+                        Image(uiImage: recipeImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 100, height: 150)
+                    } else {
+                        Image(systemName: "photo.badge.plus")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 100, height: 150)
+                            .foregroundColor(Color("RecipeOrangi"))
+                    }
                     Text("Upload Photo")
                         .font(.system(size: 20, weight: .bold))
                         .padding(.bottom, 10)
                 }
             }
             .padding(.vertical, 25)
+            .sheet(isPresented: $showImagePicker) {
+                ImagePicker(image: $recipeImage)
+            }
             
             // Title field
             VStack(alignment: .leading, spacing: 8) {
-                           Text("Title").font(.system(size: 18, weight: .bold))
-                           TextField("Title", text: $recipeViewModel.recipeName)
-                               .padding()
-                               .background(Color(.systemGray6))
-                               .cornerRadius(8)
-                               .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1))
-                       }
-                       .padding(.horizontal)
-                       .padding(.bottom, 20)
-                       
-                       // Description field
-                       VStack(alignment: .leading, spacing: 8) {
-                           Text("Description").font(.system(size: 18, weight: .bold))
-                           TextEditor(text: $recipeViewModel.recipeDescription)
-                               .scrollContentBackground(.hidden)
-                               .frame(height: 100)
-                               .padding()
-                               .background(Color(.systemGray6))
-                               .cornerRadius(8)
-                               .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1))
-                       }
-           .padding(.horizontal)
+                Text("Title").font(.system(size: 18, weight: .bold))
+                TextField("Title", text: $recipeViewModel.recipeName)
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(8)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1))
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 20)
+            
+            // Description field
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Description").font(.system(size: 18, weight: .bold))
+                TextEditor(text: $recipeViewModel.recipeDescription)
+                    .scrollContentBackground(.hidden)
+                    .frame(height: 100)
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(8)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1))
+            }
+            .padding(.horizontal)
             .padding(.bottom, 20)
             
             // Add Ingredient section
@@ -72,41 +107,35 @@ struct AddRecipe: View {
                     Image(systemName: "plus")
                         .foregroundColor(Color("RecipeOrangi"))
                         .font(.system(size: 24))
-                    
                 }
             }
-           .padding(.horizontal)
+            .padding(.horizontal)
             
-            
+            // Ingredients list
             ForEach(recipeViewModel.ingredients) { ingredient in
                 HStack {
                     Text("\(ingredient.serving)")
                         .font(.system(size: 18, weight: .bold))
                         .padding(.horizontal, 30)
-                       .padding(.vertical, 8)
+                        .padding(.vertical, 8)
                     Text(ingredient.name)
                         .font(.system(size: 18, weight: .bold))
-    
-                   Spacer()
+                    Spacer()
                     Text(ingredient.measurement)
                         .padding(.horizontal, 30)
-                       .padding(.vertical, 8)
+                        .padding(.vertical, 8)
                         .background(Color.orange)
                         .cornerRadius(8)
-
                 }
-              .padding(.bottom, 10)
-               .padding(.top, 10)
-              .background(Color.gray.opacity(0.1))
-              .padding(.horizontal,10)
-              .cornerRadius(30)
-              
-              
-          }
+                .padding(.bottom, 10)
+                .padding(.top, 10)
+                .background(Color.gray.opacity(0.1))
+                .padding(.horizontal, 10)
+                .cornerRadius(30)
+            }
         }
         .navigationTitle("New Recipe")
         .toolbar {
-            // Back button
             ToolbarItem(placement: .topBarLeading) {
                 NavigationLink(destination: RecipeView()) {
                     HStack {
@@ -120,14 +149,18 @@ struct AddRecipe: View {
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
-                    // Call addRecipe and dismiss the view
-                    recipeViewModel.addRecipe()
+                    if let recipeImage = recipeImage, let imageData = recipeImage.jpegData(compressionQuality: 0.8) {
+                        recipeViewModel.addRecipe(name: recipeViewModel.recipeName, description: recipeViewModel.recipeDescription, imageData: imageData)
+                    } else {
+                        recipeViewModel.addRecipe(name: recipeViewModel.recipeName, description: recipeViewModel.recipeDescription, imageData: nil)
+                    }
                     presentationMode.wrappedValue.dismiss()
                 }) {
                     Text("Save")
                         .font(.system(size: 20))
                         .foregroundColor(Color("RecipeOrangi"))
                 }
+
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -137,15 +170,13 @@ struct AddRecipe: View {
                 if showIngredientSheet {
                     // Ingredient pop-up overlay
                     Color.black.opacity(0.3).edgesIgnoringSafeArea(.all)
-              .onTapGesture { showIngredientSheet.toggle() }
+                    .onTapGesture { showIngredientSheet.toggle() }
                     VStack(spacing: 20) {
                         Text("Ingredient Name").font(.headline)
                         TextField("Ingredient Name", text: $ingredientName)
                             .padding()
                             .background(Color(.systemGray6))
                             .cornerRadius(8)
-                    
-
                         HStack {
                             Text("Measurement").font(.headline)
                             Spacer()
@@ -167,7 +198,6 @@ struct AddRecipe: View {
                                     .cornerRadius(8)
                             }
                         }
-                        // Serving input
                         HStack {
                             Text("Serving").font(.headline)
                             Spacer()
@@ -176,7 +206,6 @@ struct AddRecipe: View {
                             Button(action: { if serving > 1 { serving -= 1 } }) {
                                 Image(systemName: "minus")
                                     .foregroundColor(Color.black)
-                                
                             }
                             Text("\(serving)").padding(.horizontal)
                             Button(action: { serving += 1 }) {
@@ -184,25 +213,20 @@ struct AddRecipe: View {
                                     .foregroundColor(Color.black)
                             }
                             Text(selectedMeasurement).padding(.horizontal).background(Color.orange).cornerRadius(8)
-                           
                         }
-                        // Cancel and Add buttons
                         HStack {
-              Button(action: { showIngredientSheet = false }) {
+                            Button(action: { showIngredientSheet = false }) {
                                 Text("Cancel").foregroundColor(.red).padding()
-                      .frame(maxWidth: .infinity)
-                      .background(Color(.systemGray6))
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color(.systemGray6))
                                     .cornerRadius(8)
                             }
                             Button(action: {
-                              
                                 recipeViewModel.addIngredient(name: ingredientName, measurement: selectedMeasurement, serving: serving)
-                                
                                 ingredientName = ""
                                 selectedMeasurement = "Spoon"
                                 serving = 1
-
-                    showIngredientSheet = false
+                                showIngredientSheet = false
                             }) {
                                 Text("Add")
                                     .foregroundColor(.white)
@@ -211,17 +235,14 @@ struct AddRecipe: View {
                                     .background(Color.orange)
                                     .cornerRadius(8)
                             }
-
                         }
-
                     }
                     .padding()
-                   .background(Color.white)
-                   .cornerRadius(20)
-                   .shadow(radius: 20)
+                    .background(Color.white)
+                    .cornerRadius(20)
+                    .shadow(radius: 20)
                     .frame(maxWidth: 300)
                 }
-
             }
         )
     }

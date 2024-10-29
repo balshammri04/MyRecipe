@@ -1,20 +1,9 @@
-//
-//  ContentView.swift
-//  MyRecipe1
-//
-//   Created by bayan alshammri on  28/10/2024.
-//
-
 import SwiftUI
 
 struct RecipeView: View {
 
-    
     @State private var showAddRecipeSheet = false
     @ObservedObject private var recipeViewModel = RecipeViewModel()
-
-   
-    @State private var recipes: [Recipe] = []
 
     var body: some View {
         if recipeViewModel.recipes.isEmpty {
@@ -53,11 +42,22 @@ struct RecipeView: View {
                 List {
                     ForEach(recipeViewModel.recipes) { recipe in
                         ZStack(alignment: .bottomLeading) {
-                            Image("salad")
-                                .resizable()
-                                .scaledToFill()
-                                .frame(maxWidth: .infinity, minHeight: 150)
-                                .clipped()
+                            if let imageData = recipe.imageData, let uiImage = UIImage(data: imageData) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: .infinity, minHeight: 150)
+                                    .clipped()
+                            } else {
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.2))
+                                    .frame(maxWidth: .infinity, minHeight: 150)
+                                    .overlay(
+                                        Text("No Image")
+                                            .font(.headline)
+                                            .foregroundColor(.gray)
+                                    )
+                            }
 
                             LinearGradient(
                                 gradient: Gradient(colors: [.black.opacity(0.6), .clear]),
@@ -75,8 +75,7 @@ struct RecipeView: View {
 
                                 Text(recipe.description)
                                     .font(.subheadline)
-                      .foregroundColor(.white.opacity(0.7))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.white.opacity(0.7))
                                     .padding(.horizontal, 12)
                             }
                             .padding()
@@ -104,3 +103,4 @@ struct RecipeView: View {
 #Preview {
     RecipeView()
 }
+
