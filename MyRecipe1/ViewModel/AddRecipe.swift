@@ -1,42 +1,16 @@
 import SwiftUI
 import PhotosUI
 
-struct ImagePicker: View {
-    @Binding var image: UIImage?
-    @Environment(\.dismiss) var dismiss
-    @State private var selectedItem: PhotosPickerItem? = nil
-
-    var body: some View {
-        PhotosPicker(selection: $selectedItem) {
-            Text("Select a photo")
-        }
-        .onChange(of: selectedItem) {
-            Task {
-                if let newItem = selectedItem {
-                    if let data = try? await newItem.loadTransferable(type: Data.self) {
-                        if let uiImage = UIImage(data: data) {
-                            image = uiImage
-                        }
-                    }
-                }
-                dismiss()
-            }
-        }
-
-    }
-}
-
 struct AddRecipe: View {
     @ObservedObject var recipeViewModel: RecipeViewModel
     @Environment(\.presentationMode) var presentationMode
-
-    @State private var showIngredientSheet = false
+    
+    @State private var showIngredientPop: Bool = false
     @State private var ingredientName: String = ""
     @State private var selectedMeasurement: String = "Spoon"
     @State private var serving: Int = 1
-    @State private var showImagePicker = false
-    @State private var recipeImage: UIImage?
-
+    @State private var showImagePicker: Bool = false
+    
     var body: some View {
         VStack {
             // Photo upload section
@@ -46,31 +20,28 @@ struct AddRecipe: View {
                     .foregroundColor(.red)
                     .background(Color(.systemGray6))
                     .frame(maxWidth: .infinity, maxHeight: 250)
-                    .onTapGesture {
-                        showImagePicker.toggle()
-                    }
-                
                 VStack {
-                    if let recipeImage = recipeImage {
-                        Image(uiImage: recipeImage)
+                    if let selectedImage = recipeViewModel.recipeImage {
+                        Image(uiImage: selectedImage)
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 100, height: 150)
+                            .frame(maxWidth: .infinity, maxHeight: 250)
+                            .clipped()
                     } else {
                         Image(systemName: "photo.badge.plus")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 100, height: 150)
+                            .frame(width: 150, height: 150)
                             .foregroundColor(Color("RecipeOrangi"))
+                        Text("Upload Photo")
+                            .font(.system(size: 20, weight: .bold))
+                            .padding(.bottom, 10)
                     }
-                    Text("Upload Photo")
-                        .font(.system(size: 20, weight: .bold))
-                        .padding(.bottom, 10)
                 }
             }
             .padding(.vertical, 25)
-            .sheet(isPresented: $showImagePicker) {
-                ImagePicker(image: $recipeImage)
+            .onTapGesture {
+                showImagePicker.toggle()
             }
             
             // Title field
@@ -103,7 +74,7 @@ struct AddRecipe: View {
             HStack {
                 Text("Add Ingredient").font(.system(size: 18, weight: .bold))
                 Spacer()
-                Button(action: { showIngredientSheet.toggle() }) {
+                Button(action: { showIngredientPop.toggle() }) {
                     Image(systemName: "plus")
                         .foregroundColor(Color("RecipeOrangi"))
                         .font(.system(size: 24))
@@ -111,31 +82,28 @@ struct AddRecipe: View {
             }
             .padding(.horizontal)
             
-            // Ingredients list
+            // List of ingredients
             ForEach(recipeViewModel.ingredients) { ingredient in
                 HStack {
                     Text("\(ingredient.serving)")
                         .font(.system(size: 18, weight: .bold))
-                        .padding(.horizontal, 30)
-                        .padding(.vertical, 8)
                     Text(ingredient.name)
                         .font(.system(size: 18, weight: .bold))
                     Spacer()
                     Text(ingredient.measurement)
                         .padding(.horizontal, 30)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 10)
                         .background(Color.orange)
                         .cornerRadius(8)
                 }
-                .padding(.bottom, 10)
-                .padding(.top, 10)
                 .background(Color.gray.opacity(0.1))
-                .padding(.horizontal, 10)
-                .cornerRadius(30)
+                .padding(.horizontal)
+                .padding(.top, 20)
             }
         }
         .navigationTitle("New Recipe")
         .toolbar {
+            // Back button
             ToolbarItem(placement: .topBarLeading) {
                 NavigationLink(destination: RecipeView()) {
                     HStack {
@@ -149,28 +117,27 @@ struct AddRecipe: View {
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
-                    if let recipeImage = recipeImage, let imageData = recipeImage.jpegData(compressionQuality: 0.8) {
-                        recipeViewModel.addRecipe(name: recipeViewModel.recipeName, description: recipeViewModel.recipeDescription, imageData: imageData)
-                    } else {
-                        recipeViewModel.addRecipe(name: recipeViewModel.recipeName, description: recipeViewModel.recipeDescription, imageData: nil)
-                    }
+                    // Call addRecipe and dismiss the view
+                    recipeViewModel.addRecipe()
                     presentationMode.wrappedValue.dismiss()
                 }) {
                     Text("Save")
                         .font(.system(size: 20))
                         .foregroundColor(Color("RecipeOrangi"))
                 }
-
             }
         }
         .navigationBarBackButtonHidden(true)
         .toolbarBackgroundVisibility(.visible)
+        .sheet(isPresented: $showImagePicker) {
+            ImagePicker(selectedImage: $recipeViewModel.recipeImage)
+        }
         .overlay(
             Group {
-                if showIngredientSheet {
+                if showIngredientPop {
                     // Ingredient pop-up overlay
                     Color.black.opacity(0.3).edgesIgnoringSafeArea(.all)
-                    .onTapGesture { showIngredientSheet.toggle() }
+                        .onTapGesture { showIngredientPop.toggle() }
                     VStack(spacing: 20) {
                         Text("Ingredient Name").font(.headline)
                         TextField("Ingredient Name", text: $ingredientName)
@@ -183,21 +150,22 @@ struct AddRecipe: View {
                         }
                         // Measurement buttons
                         HStack {
-                            Button(action: { selectedMeasurement = "🥄 Spoon" }) {
+                            Button(action: { selectedMeasurement = "Spoon" }) {
                                 Text("🥄 Spoon")
                                     .foregroundColor(Color.black)
                                     .padding()
-                                    .background(selectedMeasurement == "🥄 Spoon" ? Color.orange : Color.gray.opacity(0.3))
+                                    .background(selectedMeasurement == "Spoon" ? Color.orange : Color.gray.opacity(0.3))
                                     .cornerRadius(8)
                             }
-                            Button(action: { selectedMeasurement = "🍵 Cup" }) {
+                            Button(action: { selectedMeasurement = "Cup" }) {
                                 Text("🍵 Cup")
                                     .foregroundColor(Color.black)
                                     .padding()
-                                    .background(selectedMeasurement == "🍵 Cup" ? Color.orange : Color.gray.opacity(0.3))
+                                    .background(selectedMeasurement == "Cup" ? Color.orange : Color.gray.opacity(0.3))
                                     .cornerRadius(8)
                             }
                         }
+                        // Serving input
                         HStack {
                             Text("Serving").font(.headline)
                             Spacer()
@@ -214,19 +182,17 @@ struct AddRecipe: View {
                             }
                             Text(selectedMeasurement).padding(.horizontal).background(Color.orange).cornerRadius(8)
                         }
+                        // Cancel and Add buttons
                         HStack {
-                            Button(action: { showIngredientSheet = false }) {
-                                Text("Cancel").foregroundColor(.red).padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color(.systemGray6))
-                                    .cornerRadius(8)
+                            Button(action: { showIngredientPop = false }) {
+                                Text("Cancel").foregroundColor(.red).padding().frame(maxWidth: .infinity).background(Color(.systemGray6)).cornerRadius(8)
                             }
                             Button(action: {
                                 recipeViewModel.addIngredient(name: ingredientName, measurement: selectedMeasurement, serving: serving)
                                 ingredientName = ""
                                 selectedMeasurement = "Spoon"
                                 serving = 1
-                                showIngredientSheet = false
+                                showIngredientPop = false
                             }) {
                                 Text("Add")
                                     .foregroundColor(.white)
@@ -242,12 +208,60 @@ struct AddRecipe: View {
                     .cornerRadius(20)
                     .shadow(radius: 20)
                     .frame(maxWidth: 300)
+                    .padding()
                 }
             }
         )
     }
 }
 
+struct ImagePicker: UIViewControllerRepresentable {
+    @Binding var selectedImage: UIImage?
+
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration()
+        config.filter = .images
+        config.selectionLimit = 1
+
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let parent: ImagePicker
+
+        init(_ parent: ImagePicker) {
+            self.parent = parent
+        }
+
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            picker.dismiss(animated: true)
+
+            guard let provider = results.first?.itemProvider, provider.canLoadObject(ofClass: UIImage.self) else {
+                return
+            }
+
+            provider.loadObject(ofClass: UIImage.self) { image, _ in
+                DispatchQueue.main.async {
+                    self.parent.selectedImage = image as? UIImage
+                }
+            }
+        }
+    }
+}
+
 #Preview {
-    AddRecipe(recipeViewModel: RecipeViewModel())
+    // Sample view model for preview
+    let sampleViewModel = RecipeViewModel()
+    sampleViewModel.recipeName = "Sample Recipe"
+    sampleViewModel.recipeDescription = "This is a sample description of a recipe."
+
+    return AddRecipe(recipeViewModel: sampleViewModel)
 }

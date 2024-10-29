@@ -14,38 +14,36 @@ final class RecipeViewModel: ObservableObject {
     @Published var recipeImage: UIImage?
     @Published var recipeDescription: String = ""
     @Published var showAddRecipeSheet: Bool = false
+    
     @Published var ingredientName: String = ""
     @Published var selectedMeasurement: String = "Spoon"
     @Published var serving: Int = 1
+    
     @Published var ingredients: [Ingredient] = []
     @Published var recipes: [Recipe] = []
     
-    // دالة لإضافة مكون إلى قائمة المكونات
     func addIngredient(name: String, measurement: String, serving: Int) {
+        
         let newIngredient = Ingredient(name: name, measurement: measurement, serving: serving)
         ingredients.append(newIngredient)
         
-        // إعادة تعيين الحقول
+        
         ingredientName = ""
         selectedMeasurement = "Spoon"
         self.serving = 1
     }
-
-    // دالة لإضافة وصفة جديدة إلى قائمة الوصفات
+    
     func addRecipe() {
-        // تحويل الصورة إلى بيانات
-        let imageData = recipeImage?.jpegData(compressionQuality: 0.8)
-        
         let newRecipe = Recipe(
             name: recipeName,
+            image: recipeImage,
             description: recipeDescription,
-            imageData: imageData,
             ingredients: ingredients
         )
         
         recipes.append(newRecipe)
         
-        // إعادة تعيين الحقول بعد الإضافة
+        // Reset fields
         recipeName = ""
         recipeImage = nil
         recipeDescription = ""
@@ -54,6 +52,25 @@ final class RecipeViewModel: ObservableObject {
         print("Added recipe with ingredients")
         print(recipes)
     }
+    
+    
+    func deleteRecipe(recipe: Recipe, completion: @escaping () -> Void) {
+        if let index = recipes.firstIndex(where: { $0.id == recipe.id }) {
+            recipes.remove(at: index)
+            completion()
+        }
+    }
+
+    
+    
+    func editRecipe(originalRecipe: Recipe, newName: String, newDescription: String, newImage: UIImage?) {
+        if let index = recipes.firstIndex(where: { $0.id == originalRecipe.id }) {
+            // Update the recipe details
+            recipes[index].name = newName
+            recipes[index].description = newDescription
+            recipes[index].image = newImage
+        }
+    }
+
+
 }
-
-
